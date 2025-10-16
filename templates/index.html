@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aplikasi Prediksi Kredit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --brand: #2563eb; /* biru utama */
+        --brand-600: #1e40af; /* biru lebih gelap */
+        --accent: #2563eb;
+        --surface: #18181b;        /* warna kartu (card) gelap */
+        --surface-soft: #232336;   /* warna accent section card */
+        --bg: #111113;             /* warna latar belakang halaman */
+        --text: #e4e4e7;           /* tulisan primer */
+        --muted: #64748b;          /* tulisan muted */
+        --success: #22d3ee;        /* biru muda: sukses */
+        --danger: #ef4444;         /* merah tua */
+        --info: #2563eb;
+        --border: #22223a;
+      }
+      html, body { height: 100%; }
+      body {
+        font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        color: var(--text);
+        background-color: var(--bg) !important;
+      }
+      .container-narrow {
+        max-width: 980px;
+        margin: 0 auto;
+      }
+      .page-title {
+        font-weight: 600;
+        text-align: center;
+        color: var(--brand);
+      }
+      .page-subtitle { 
+        text-align: center; 
+        color: var(--muted); 
+      }
+      .card { 
+        border: 1px solid var(--border); 
+        background: var(--surface); 
+        border-radius: 14px; 
+        color: var(--text);
+      }
+      .card .card-body { padding: 1.25rem; }
+      @media (min-width: 576px) { .card .card-body { padding: 1.5rem; } }
+      .btn-primary { background-color: var(--brand); border-color: var(--brand); color: #fff; }
+      .btn-primary:hover { background-color: var(--brand-600); border-color: var(--brand-600); }
+      .btn-outline { border: 1px solid var(--brand); color: var(--brand); background: transparent; }
+      .btn-outline:hover { background: var(--brand); color: white; }
+      .form-label { font-weight: 500; color: var(--text);}
+      .form-control, .form-select { border-radius: 10px; background: #18181b; color: var(--text); border: 1px solid var(--border);}
+      .form-control:focus, .form-select:focus { 
+        box-shadow: 0 0 0 .2rem rgba(37, 99, 235, 0.15); 
+        border-color: var(--brand);
+        color: var(--text);
+        background: #232336;
+      }
+      .result-title { font-weight: 600; margin-bottom: .75rem; }
+      .alert-danger { border-left: 4px solid var(--danger); background: #2a1723; color: var(--danger);}
+      .alert-success { border-left: 4px solid var(--success); background: #17323a; color: var(--success);}
+      .charts img { background: var(--surface); border: 1px solid var(--border);}
+      /* Section accents */
+      .section-title { color: var(--accent); font-weight: 600; }
+      .card-accent-primary { border-top: 4px solid var(--brand); }
+      .card-accent-neutral { border-top: 4px solid var(--info); }
+      .soft { background: var(--surface-soft); }
+      .hero .card-body { padding: 2rem 1.5rem; }
+      @media (min-width: 576px) { .hero .card-body { padding: 2.5rem 2rem; } }
+      ::placeholder {
+        color: #728191 !important;
+        opacity: 1;
+      }
+      /* Untuk select option warna */
+      select option {
+        background: #18181b;
+        color: var(--text);
+      }
+      /* Hilangkan border input file pada dark mode */
+      input, select {
+        border-color: var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container container-narrow py-4">
+      <div class="row">
+        <div class="col-12">
+          <div class="card shadow-sm card-accent-primary soft hero">
+            <div class="card-body text-center">
+              <h1 class="mb-2 page-title">Prediksi Risiko Gagal Bayar</h1>
+              <p class="page-subtitle mb-0">Masukkan data nasabah atau pilih preset dari dataset, lalu klik Prediksi untuk melihat hasil dan probabilitas.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-12">
+          <div class="card shadow-sm card-accent-primary">
+            <div class="card-body">
+              {% if presets and presets|length > 0 %}
+              <div class="mb-3">
+                <label class="form-label">Pilih baris dari dataset untuk isi otomatis</label>
+                <select id="preset-select" class="form-select">
+                  <option value="">-- Pilih contoh data --</option>
+                  {% for p in presets %}
+                    <option value="{{ loop.index0 }}">ID: {{ p['__id__'] }}{% if p['__label__'] is defined and p['__label__'] != '' %} | Label: {{ p['__label__'] }}{% endif %}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endif %}
+              <form method="POST" action="/">
+                <div class="row g-3">
+                  <!-- Kolom kiri -->
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">LIMIT_BAL</label>
+                      <input type="number" step="1" class="form-control" name="LIMIT_BAL" placeholder="Contoh: 200000" required />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">AGE</label>
+                      <input type="number" step="1" class="form-control" name="AGE" placeholder="Contoh: 35" required />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">SEX</label>
+                      <select name="SEX" class="form-select">
+                        <option value="1">Laki-laki (1)</option>
+                        <option value="2">Perempuan (2)</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">EDUCATION</label>
+                      <select name="EDUCATION" class="form-select">
+                        <option value="1">S2/S3 (1)</option>
+                        <option value="2">S1 (2)</option>
+                        <option value="3">SMA (3)</option>
+                        <option value="4">Lainnya (4)</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">MARRIAGE</label>
+                      <select name="MARRIAGE" class="form-select">
+                        <option value="1">Menikah (1)</option>
+                        <option value="2">Lajang (2)</option>
+                        <option value="3">Lainnya (3)</option>
+                      </select>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">PAY_0 (Status pembayaran bulan terbaru)</label>
+                      <input type="number" step="1" class="form-control" name="PAY_0" placeholder="Contoh: 0" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">PAY_2</label>
+                      <input type="number" step="1" class="form-control" name="PAY_2" placeholder="Contoh: 0" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">PAY_3</label>
+                      <input type="number" step="1" class="form-control" name="PAY_3" placeholder="Contoh: 0" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">PAY_4</label>
+                      <input type="number" step="1" class="form-control" name="PAY_4" placeholder="Contoh: 0" />
+                    </div>
+                  </div>
+
+                  <!-- Kolom kanan -->
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">PAY_5</label>
+                      <input type="number" step="1" class="form-control" name="PAY_5" placeholder="Contoh: 0" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">PAY_6</label>
+                      <input type="number" step="1" class="form-control" name="PAY_6" placeholder="Contoh: 0" />
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">BILL_AMT1</label>
+                      <input type="number" step="0.01" class="form-control" name="BILL_AMT1" placeholder="Contoh: 3913" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">BILL_AMT2</label>
+                      <input type="number" step="0.01" class="form-control" name="BILL_AMT2" placeholder="Contoh: 2682" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">BILL_AMT3</label>
+                      <input type="number" step="0.01" class="form-control" name="BILL_AMT3" placeholder="Contoh: 29239" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">BILL_AMT4</label>
+                      <input type="number" step="0.01" class="form-control" name="BILL_AMT4" placeholder="Contoh: 14027" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">BILL_AMT5</label>
+                      <input type="number" step="0.01" class="form-control" name="BILL_AMT5" placeholder="Contoh: 13559" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">BILL_AMT6</label>
+                      <input type="number" step="0.01" class="form-control" name="BILL_AMT6" placeholder="Contoh: 14331" />
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label">PAY_AMT1</label>
+                      <input type="number" step="0.01" class="form-control" name="PAY_AMT1" placeholder="Contoh: 0" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">PAY_AMT2</label>
+                      <input type="number" step="0.01" class="form-control" name="PAY_AMT2" placeholder="Contoh: 689" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">PAY_AMT3</label>
+                      <input type="number" step="0.01" class="form-control" name="PAY_AMT3" placeholder="Contoh: 0" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">PAY_AMT4</label>
+                      <input type="number" step="0.01" class="form-control" name="PAY_AMT4" placeholder="Contoh: 0" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">PAY_AMT5</label>
+                      <input type="number" step="0.01" class="form-control" name="PAY_AMT5" placeholder="Contoh: 0" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">PAY_AMT6</label>
+                      <input type="number" step="0.01" class="form-control" name="PAY_AMT6" placeholder="Contoh: 0" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-3 d-grid">
+                  <button type="submit" class="btn btn-primary btn-lg">Prediksi</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="card shadow-sm card-accent-neutral soft">
+            <div class="card-body">
+              <h5 class="card-title result-title text-center section-title">Hasil Prediksi</h5>
+              {% if prediction_label %}
+                <div class="d-flex justify-content-center mb-2">
+                  <div class="alert {{ 'alert-danger' if prediction_label == 'Berisiko' else 'alert-success' }} w-100" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                      {% if prediction_label == 'Berisiko' %}
+                        <span class="text-danger">✱</span>
+                        <strong>Berisiko</strong>
+                      {% else %}
+                        <span class="text-success">✓</span>
+                        <strong>Tidak Berisiko</strong>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                {% if default_probability is not none %}
+                  <p class="mb-0 text-center">Probabilitas gagal bayar: <strong>{{ (default_probability * 100) | round(2) }}%</strong></p>
+                {% endif %}
+              {% else %}
+                <p class="text-muted mb-0 text-center">Belum ada prediksi. Silakan isi form di atas dan klik Prediksi.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="card shadow-sm card-accent-neutral">
+            <div class="card-body">
+              <h5 class="card-title mb-3 text-center section-title">Grafik Analisis</h5>
+              <div class="row g-3 charts">
+                <div class="col-12 col-md-6">
+                  <img src="/static/confusion matrix.png" alt="Confusion Matrix" class="img-fluid rounded border" />
+                </div>
+                <div class="col-12 col-md-6">
+                  <img src="/static/ROC curve.png" alt="ROC Curve" class="img-fluid rounded border" />
+                </div>
+                <div class="col-12 col-md-6">
+                  <img src="/static/korelasi antar fitur.png" alt="Korelasi Antar Fitur" class="img-fluid rounded border" />
+                </div>
+                <div class="col-12 col-md-6">
+                  <img src="/static/Grafik distribusi.png" alt="Grafik Distribusi" class="img-fluid rounded border" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="mt-4 mb-2 text-center text-muted small">
+      </footer>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        // Only enable the preset code if presets exist
+        const presets = JSON.parse('{{ (presets or []) | tojson | safe }}');
+        const select = document.getElementById('preset-select');
+        if (select && Array.isArray(presets)) {
+          select.addEventListener('change', function() {
+            const idx = this.value;
+            if (idx === "" || !presets.length) return;
+            const p = presets[Number(idx)];
+            if (!p) return;
+            Object.keys(p).forEach(function(k) {
+              if (k.startsWith('__')) return;
+              const el = document.querySelector('[name="' + k + '"]');
+              if (!el) return;
+              if (el.tagName === 'SELECT') {
+                el.value = String(p[k]);
+              } else {
+                el.value = p[k];
+              }
+            });
+          });
+        }
+      });
+    </script>
+  </body>
+</html>
